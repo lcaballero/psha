@@ -1,0 +1,22 @@
+{
+  "name": "psha",
+  "version": "0.0.1",
+  "description": "Simple in memory caching library for node.",
+  "main": "index.js",
+  "scripts": {
+    "test": "./node_modules/.bin/mocha --reporter list --watch --compilers coffee:coffee-script/register --recursive tests"
+  },
+  "author": "Lucas Caballero",
+  "license": "Eclipse Public License (EPL)",
+  "dependencies": {
+    "coffee-script": "^1.7.1",
+    "lodash": "^2.4.1",
+    "moment": "^2.8.3"
+  },
+  "devDependencies": {
+    "chai": "^1.9.1",
+    "mocha": "^1.21.4",
+    "sinon": "^1.10.3",
+    "sinon-chai": "^2.5.0"
+  }
+}
