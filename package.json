@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "description": "Simple in memory caching library for node.",
   "scripts": {
-    "test": "./node_modules/.bin/mocha --reporter list --watch --compilers coffee:coffee-script/register --recursive tests"
+    "test": "./node_modules/.bin/mocha --reporter list --compilers coffee:coffee-script/register --recursive tests"
   },
   "author": "Lucas Caballero",
   "license": "Eclipse Public License (EPL)",
