@@ -1,14 +1,19 @@
 # Introduction [![Build Status](https://travis-ci.org/lcaballero/psha.svg?branch=master)](https://travis-ci.org/)
 
 Psha is an in memory cache for JavaScript (well Node.js in particular).  Pronounced, as if by a kung-fu panda,
-"Ppppssshhaaaaa-aaa". Simplified for use in a require() call to just: `Psha` (no guessing as to number for each
+"PpppssshhAaaaa-Aaa". Simplified for use in a require() call to just: `Psha` (no guessing as to number for each
 of the letters).
+
+Psha is smart about how it issues update() calls.  For instance, if a client were to issue requests for items
+that had int IDs in this order `[1,2,3]` then `[4,5,6]`, followed by `[3,4]` it would only issue update
+calls to fill the first two requests and then use the results to fill the third since `[3,4]` is a subset of
+both the first and second update calls.
+
 
 ## Installation
 
-TODO:
 ```
-%> npm install [todo]
+%> npm install psha --save
 ```
 
 
