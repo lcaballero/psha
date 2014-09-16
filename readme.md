@@ -1,8 +1,8 @@
 # Introduction [![Build Status](https://travis-ci.org/lcaballero/psha.svg?branch=master)](https://travis-ci.org/)
 
 Psha is an in memory cache for JavaScript (well Node.js in particular).  Pronounced, as if by a kung-fu panda,
-"Ppppssshhaaaaa-aaa". I didn't want people to guess how many of each leter were to put in their require() call
-so I reduced it to just `Psha`.
+"Ppppssshhaaaaa-aaa". Simplified for use in a require() call to just: `Psha` (no guessing as to number for each
+of the letters).
 
 ## Installation
 

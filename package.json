@@ -1,7 +1,8 @@
 {
   "name": "psha",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Simple in memory caching library for node.",
+  "main": "index.js",
   "scripts": {
     "test": "./node_modules/.bin/mocha --reporter list --compilers coffee:coffee-script/register --recursive tests"
   },
