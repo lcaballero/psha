@@ -92,8 +92,8 @@ describe 'PshaTest =>', ->
       cache.get(toKeyIds([11]), (err, res) -> )
 
       setTimeout(->
-        expect(_.keys(cleared), "should have cleared a number of keys").to.have.length([1..7].length)
-        expect(_.keys(cache._cache), "should have reduced cache keys").to.have.length([11..20].length)
+        expect(_.keys(cleared), "should have cleared a number of keys: " + JSON.stringify(_.keys(cleared))).to.have.length([1..7].length)
+        expect(_.keys(cache._cache), "should have reduced cache keys: " + JSON.stringify(_.keys(cache._cache))).to.have.length([11..20].length)
         done()
       , ttl)
 
