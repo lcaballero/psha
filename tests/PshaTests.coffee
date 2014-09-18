@@ -67,7 +67,7 @@ describe 'PshaTest =>', ->
         done()
       )
 
-    it.skip 'should fire the clear callback when items are removed from the cache via ttl', (done) ->
+    it 'should fire the clear callback when items are removed from the cache via ttl', (done) ->
       ttl     = 300
       delta   = 100
       cleared = {}
@@ -92,8 +92,10 @@ describe 'PshaTest =>', ->
       cache.get(toKeyIds([11]), (err, res) -> )
 
       setTimeout(->
-        expect(_.keys(cleared), "should have cleared a number of keys: " + JSON.stringify(_.keys(cleared))).to.have.length([1..7].length)
-        expect(_.keys(cache._cache), "should have reduced cache keys: " + JSON.stringify(_.keys(cache._cache))).to.have.length([11..20].length)
+        expect(_.keys(cleared), "should have cleared a number of keys: " + JSON.stringify(_.keys(cleared)))
+          .to.have.length([1..7].length)
+        expect(_.keys(cache._cache), "should have reduced cache keys: " + JSON.stringify(_.keys(cache._cache)))
+          .to.have.length([11..20].length)
         done()
       , ttl)
 
@@ -367,20 +369,108 @@ describe 'PshaTest =>', ->
         checkFill(revised, realized, c4, filledIds, pendingIds)
 
 
-
   describe "timeout =>", ->
 
-    it.skip "if the request times out the cb be fired with an error", ->
+    describe '_findOverdueRequests =>', ->
+
+      createPending = (misses, ts, cb) ->
+        cb ?= (->)
+        ({
+          id        : JSON.stringify(_.map(misses, (id) -> 'key-' + id))
+          misses    : _.map(misses, (id) -> 'key-' + id)
+          timestamp : ts
+          callback  : cb
+        } for id in misses)
+
+      createPendingLookup = (reqs) ->
+        rv = {}
+        for req in reqs
+          for id in req.misses
+            if !rv[id]? then rv[id] = []
+            rv[id].push(req)
+        rv
+
+      _300ms = 300
+      _250ms = 250
+      _200ms = 200
+      _100ms = 100
+
+      it "should determine that some pending requests have timed out", ->
+        opts    = update : (->)
+        now     = moment().valueOf()
+        cache   = new Psha(opts)
+
+        p1      = createPending(  [1..5], now - _300ms) # +5
+        p2      = createPending([11..20], now - _250ms) # +10
+        p3      = createPending([31..60], now - _100ms) # +0
+        p4      = createPending([11..15], now - _100ms) # +0
+
+        pending = createPendingLookup(_.flatten([p1, p2, p3, p4]))
+
+        # Should consider everything with age > 200ms as timedout
+        overdue = cache._findOverdueRequests(pending, _200ms)
+
+        expect(_.keys(overdue)).to.have.length([p1, p2].length)
+
+      it "should fire callback with timeout error for those overdue", (done) ->
+        errs    = []
+        opts    = update : (->)
+        cb      = (err) ->
+          errs.push(err)
+          if errs.length is [p1,p2].length then done()
+
+        now     = moment().valueOf()
+        cache   = new Psha(opts)
+
+        p1      = createPending(  [1..5], now - _300ms, cb) # +5
+        p2      = createPending([11..20], now - _250ms, cb) # +10
+        p3      = createPending([31..60], now - _100ms, cb) # +0
+        p4      = createPending([11..15], now - _100ms, cb) # +0
+
+        pending = createPendingLookup(_.flatten([p1, p2, p3, p4]))
+
+        # Should consider everything with age > 200ms as timedout
+        cache._clearOverdueRequests(pending, _200ms)
+
+      it "pending request should reflect less those that are overdue", ->
+        opts    = update : (->)
+        now     = moment().valueOf()
+        cache   = new Psha(opts)
+
+        p1      = createPending(  [1..5], now - _300ms) # +5
+        p2      = createPending([11..20], now - _250ms) # +10
+        p3      = createPending([31..60], now - _100ms) # +0
+        p4      = createPending([11..15], now - _100ms) # +0
+
+        pending = createPendingLookup(_.flatten([p1, p2, p3, p4]))
+
+        # Should consider everything with age > 200ms as timedout
+        cache._clearOverdueRequests(pending, _200ms)
+
+        expect(cache.getPendingKeys()).to.have.length(p3.length + p4.length)
+
 
     it.skip "if the request times out then all request sets waiting on the keys need to fail", ->
+      # At the moment this doesn't need to be implemented because eventually those
+      # pending requests will timeout, it's just a matter of time.
+
+      # The idea behind this test case is to see that the timeout fails, and it will naturally
+      # do so, just not immediately.
 
     it.skip "if a request times out all other requests with pending keys in that request should also timeout", ->
+      # At the moment this doesn't need to be implemented because eventually those
+      # pending requests will timeout, it's just a matter of time.
 
-    it.skip "should timeout any late requests and callback with a timeout error", (done) ->
+      # The idea behind this test case is to see that the timeout fails, and it will naturally
+      # do so, just not immediately.
+
+    it "should timeout any late requests and callback with a timeout error", (done) ->
       opts = update: (->), timeout: 100
-      cache = new Psha(opts)
-      cache.get(1, (err, res) ->
+      cache = new Psha(opts, minTimeout: 100, timeoutInterval: 100)
+      cache.get([1], (err, res) ->
+        expect(res).to.not.exist
         expect(err).to.exist
+        done()
       )
 
     it "should throw an error if timeout is less than 1sec", ->

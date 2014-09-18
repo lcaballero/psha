@@ -19,11 +19,11 @@ class Psha
       will be removed from the internal cache.
   ###
   constructor: (opts, defaults) ->
-    { ttl, update, clear, timeout, logger } = opts
+    { ttl, update, clear, timeout, logger, timeoutInterval } = opts
 
     # Used to mimick a seperate set of default for testing.  For instance, setting
     # the default minimim timeout to something more reasonable for testing.
-    defaults = _.defaults({}, defaults, Psha.defaults)
+    defaults = _.defaults({}, defaults or {}, Psha.defaults)
 
     Psha.runningCaches.push(this)
 
@@ -36,7 +36,7 @@ class Psha
     @_ttl     = ttl or defaults.ttl
     @_timeout = Number(timeout or defaults.timeout)
 
-    if !@_timeout or !@_timeout? or @_timeout < _1sec
+    if !@_timeout or !@_timeout? or @_timeout < defaults.minTimeout
       throw new Error('Timeout must be greater than or equal to 1 second.')
 
     @_update        = update
@@ -45,8 +45,12 @@ class Psha
     @_pending       = {}
     @_defaults      = defaults
     @log            = logger or defaults.logger
-    @_timeoutTimer  = null
     @_ttlTimer      = setInterval((=> @_clearExpiredEntries()), @_ttl / 2)
+
+    # Request timeouts are checked every second, but the duration before a timeout
+    # is fired is controlled by the timeout provided in the options and defaults.
+    @_timeoutInterval = timeoutInterval or defaults.timeoutInterval
+    @_timeoutTimer    = setInterval((=> @_clearOverdueRequests()), @_timeoutInterval)
 
   getTimeout: -> @_timeout
   getTtl: -> @_ttl
@@ -58,6 +62,51 @@ class Psha
   clearTimers: ->
     clearInterval(@_ttlTimer)
     clearInterval(@_timeoutTimer)
+
+  _findOverdueRequests:  (pending, timeout, now) ->
+    pending ?= @_pending
+    timeout ?= @_timeout
+    now      = moment().valueOf()
+    overdue  = {}
+
+    for k,reqs of pending
+      aged  = _.filter(reqs, (req) -> (now - req.timestamp) > timeout)
+      if aged.length > 0
+        for old in aged
+          if overdue[old.id]? then continue
+          overdue[old.id] = old
+
+    overdue
+
+  ###
+    Produces a new pending map where the keys are those keys where an update
+    was made and the values are a list of requests the request that should
+    produce the given key.
+
+    { 'key-requested-1' : [ req-1-needing-key-1, req-2-needing-key-1 ] }
+  ###
+  _reviseOverdueRequests: (pending, timeout, now) ->
+    pending   ?= @_pending
+    timeout   ?= @_timeout
+    now       ?= moment().valueOf()
+    awaiting   = {}
+
+    for k,reqs of pending
+      young = _.filter(reqs, (req) -> (now - req.timestamp) <= timeout)
+      if young.length > 0
+        awaiting[k] = young
+
+    awaiting
+
+  _clearOverdueRequests: (pending, timeout, now) ->
+    now     ?= moment().valueOf()
+    overdue  = @_findOverdueRequests(pending, timeout, now)
+    awaiting = @_reviseOverdueRequests(pending, timeout, now)
+
+    @_pending = awaiting
+
+    for k,old of overdue
+      old.callback(new Error("Request has timed out for keys: " + JSON.stringify(old.misses)))
 
   ###
     Adds cache entries using the key/value pairs provided; and, if a timestamp @now
@@ -263,9 +312,10 @@ class Psha
 
 Psha.runningCaches = []
 Psha.defaults = {
-  ttl           : _30sec
-  timeout       : _20sec
-  minTimeout    : _1sec
+  ttl             : _30sec
+  timeout         : _20sec
+  timeoutInterval : _1sec
+  minTimeout      : _1sec
   clear         : (key, value, age) ->
   logger : (->
     log = console.log
