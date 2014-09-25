@@ -44,14 +44,22 @@ cache.get([id1, id2, id3, ... , id4], (err, res) ->)
 ```coffeescript
 
 options = {
-    update: (keys, cb) -> Database.runProc(keys, cb)
+  update: (keys, cb) -> Database.runProc(keys, (err, res) ->
+    if err?
+      cb(err, null)
+    else
+      pairs = {}
+      for r in res
+        pairs[r.id] = r
+      pairs
+  )
 }
 cache = new Psha(options)
 cache.get([id1, id2], (err, res) ->
-    # Will respond with items from the cache if id1 and id2 are both in the cache.
-    # For a cache miss the update function will be ran.
+  # Will respond with items from the cache if id1 and id2 are both in the cache.
+  # For a cache miss the update function will be ran.
 
-    ... do something with result ...
+  ... do something with result ...
 )
 ```
 
