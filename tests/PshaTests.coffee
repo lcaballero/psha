@@ -37,6 +37,49 @@ describe 'PshaTest =>', ->
     for r in Psha.runningCaches
       r.clearTimers()
 
+
+  describe 'caching array results =>', ->
+
+    it 'should lodash examples', ->
+      console.log('lodash map', _.map([], (f) -> 1))
+
+    it 'should cache array results', (done) ->
+      opts = update : (keys, cb) ->
+        lookup = {}
+        for a in keys
+          lookup[a] = [a]
+        cb(null, lookup)
+
+      cache = new Psha(opts)
+
+      cache.get([1], (e1, r1) ->
+        cache.get([1], (e2, r2) ->
+          expect(e2).to.not.exist
+
+          expect(r1).to.have.length(r2.length)
+          expect(_.isArray(r2[0]))
+          expect(_.isArray(r1[0])).to.be.true
+          expect(_.isArray(r2[0])).to.be.true
+          done()
+        )
+      )
+
+    it 'should produce single array', (done) ->
+      opts = update : (keys, cb) ->
+        lookup = {}
+        for a in keys
+          lookup[a] = [a]
+        cb(null, lookup)
+
+      cache = new Psha(opts)
+
+      cache.get([1], (err, res) ->
+        expect(err).to.not.exist
+        expect(_.isArray(res)).to.be.true
+        expect(res[0][0]).to.equal(1)
+        done()
+      )
+
   describe 'ttl =>', ->
 
     it 'should produce values that would have otherwise have been removed between ttl and recieving result', (done) ->
@@ -450,14 +493,14 @@ describe 'PshaTest =>', ->
         expect(cache.getPendingKeys()).to.have.length(p3.length + p4.length)
 
 
-    it.skip "if the request times out then all request sets waiting on the keys need to fail", ->
+#    it.skip "if the request times out then all request sets waiting on the keys need to fail", ->
       # At the moment this doesn't need to be implemented because eventually those
       # pending requests will timeout, it's just a matter of time.
 
       # The idea behind this test case is to see that the timeout fails, and it will naturally
       # do so, just not immediately.
 
-    it.skip "if a request times out all other requests with pending keys in that request should also timeout", ->
+#    it.skip "if a request times out all other requests with pending keys in that request should also timeout", ->
       # At the moment this doesn't need to be implemented because eventually those
       # pending requests will timeout, it's just a matter of time.
 

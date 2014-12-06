@@ -255,8 +255,7 @@ class Psha
 
     for k,v of realized
       if v.callback?
-        all     = [ v.values, _.map(v.misses, (key) => @_cache[key].value) ]
-        values  = _.flatten( all )
+        values     = [].concat(v.values).concat(_.map(v.misses, (key) => @_cache[key].value))
 
         # Check if the callback will take 3 parameters the first of which
         # is considered a logical 'name' provided with the get() call.

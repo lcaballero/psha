@@ -3,6 +3,7 @@
   "version": "0.0.4",
   "description": "Simple in memory caching library for node.",
   "main": "index.js",
+  "repository": "https://github.com/lcaballero/psha.git",
   "scripts": {
     "test": "./node_modules/.bin/mocha --reporter list --compilers coffee:coffee-script/register --recursive tests"
   },
